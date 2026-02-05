@@ -1,0 +1,589 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <link rel="stylesheet" href="./resources/ol.css">
+        <link rel="stylesheet" href="resources/fontawesome-all.min.css">
+        <link href="resources/photon-geocoder-autocomplete.min.css" rel="stylesheet">
+        <link rel="stylesheet" href="./resources/qgis2web.css">
+        <style>
+        html, body {
+            background-color: #ffffff;
+        }
+        .ol-control > * {
+            background-color: #f8f8f8!important;
+            color: #444444!important;
+            border-radius: 0px;
+        }
+        .ol-attribution a, .gcd-gl-input::placeholder, .search-layer-input-search::placeholder {
+            color: #444444!important;
+        }
+        .search-layer-input-search {
+            background-color: #f8f8f8!important;
+        }
+        .ol-control > *:focus, .ol-control >*:hover {
+            background-color: rgba(248, 248, 248, 0.7)!important;
+        } 
+        .ol-control {
+            background-color: rgba(255,255,255,.4) !important;
+            padding: 2px !important;
+        }
+        #filter-buttons {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            background-color: rgba(255, 255, 255, 0.5);
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 10px;
+        }
+        .filter-button {
+            padding: 12px 15px; /* Increased padding */
+            margin-bottom: 5px;
+            background-color: #FFDDC1; /* Light Orange */
+            color: #444444;
+            border: 1px solid #ccc;
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 20pt; /* Added font size */
+        }
+        #dev-step-btn {
+            background-color: #ADD8E6; /* Light Blue */
+        }
+        .filter-button.off {
+            background-color: #e0e0e0;
+            color: #999999;
+        }
+        #polygon-list-container {
+            position: absolute;
+            bottom: 30px;
+            right: 10px;
+            z-index: 1000;
+            background-color: rgba(255, 255, 255, 0.85);
+            max-height: 40%;
+            overflow-y: auto;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        #polygon-list-table {
+            border-collapse: collapse;
+            font-size: 12pt;
+        }
+        #polygon-list-table th, #polygon-list-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        #polygon-list-table td:nth-child(1) {
+            max-width: 20ch; /* 名称 */
+            overflow-wrap: break-word;
+        }
+        #polygon-list-table td:nth-child(2) {
+            max-width: 4ch; /* 役割分担 */
+            overflow-wrap: break-word;
+        }
+        #polygon-list-table td:nth-child(3) {
+            max-width: 17ch; /* 完成時期 */
+            overflow-wrap: break-word;
+        }
+        #polygon-list-table th {
+            background-color: #f2f2f2;
+            position: sticky;
+            top: 0;
+        }
+        .list-item-off td {
+            color: #999999;
+        }
+        #flowchart-overlay {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 1001;
+            background-color: rgba(255, 255, 255, 1.0);
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 15px;
+            padding-top: 40px;
+            text-align: center;
+        }
+        #close-flowchart-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            cursor: pointer;
+            background-color: #f8f8f8;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .flow-step {
+            border: 1px solid #999;
+            border-radius: 4px;
+            padding: 10px;
+            margin: 5px 0;
+            background-color: rgba(240, 240, 240, 0.8);
+        }
+        .flow-arrow {
+            font-size: 16pt;
+            font-weight: bold;
+        }
+        #flowchart-overlay h3 {
+            font-size: 18pt;
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+        .flow-item {
+            cursor: pointer;
+            display: inline-block;
+            padding: 2px 5px;
+            font-size: 16pt;
+        }
+        .flow-item:hover {
+            text-decoration: underline;
+        }
+        </style>
+
+        <style>
+        html, body, #map {
+            width: 100%;
+            height: 100%;
+            padding: 0;
+            margin: 0;
+        }
+        </style>
+        <title>JR松山駅周辺</title>
+    </head>
+    <body>
+        <div id="map">
+            <div id="popup" class="ol-popup">
+                <a href="#" id="popup-closer" class="ol-popup-closer"></a>
+                <div id="popup-content"></div>
+            </div>
+        </div>
+        <div id="filter-buttons">
+            <button id="ehime-btn" class="filter-button">愛媛県</button>
+            <button id="matsuyama-btn" class="filter-button">松山市</button>
+            <button id="jr-btn" class="filter-button">ＪＲ四国</button>
+            <button id="iyotetsu-btn" class="filter-button">伊予鉄道</button>
+            <button id="dev-step-btn" class="filter-button">整備ステップ</button>
+            <div style="margin-top: 10px; background-color: #f8f8f8; padding: 5px; border-radius: 4px; text-align: center;">
+                <input type="checkbox" id="label-toggle" checked style="transform: scale(1.5); margin-right: 5px; vertical-align: middle;">
+                <label for="label-toggle" style="color: #444444; font-size: 16pt; vertical-align: middle;">ラベルon/off</label>
+            </div>
+        </div>
+        <div id="polygon-list-container">
+            <table id="polygon-list-table">
+                <thead>
+                    <tr>
+                        <th>名称</th>
+                        <th>役割分担</th>
+                        <th>完成時期</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Rows will be added here by JavaScript -->
+                </tbody>
+            </table>
+        </div>
+        <div id="flowchart-overlay" style="display: none;">
+            <button id="close-flowchart-btn">閉じる</button>
+            <h3>整備のステップ（イメージ）</h3>
+            <div class="flow-step">
+                <span class="flow-item" data-name="鉄道高架化">①高速高架化</span>
+            </div>
+            <div class="flow-arrow">↓</div>
+            <div class="flow-step">
+                <span class="flow-item" data-name="三番町線">②三番町線</span>
+                <br>
+                <span class="flow-item" data-name="松山駅西南北線①">松山駅西南北線</span>
+            </div>
+            <div class="flow-arrow">↓</div>
+            <div class="flow-step">
+                <span class="flow-item" data-name="松山駅西口南江戸線">③松山駅西口南江戸線</span>
+                <br>
+                <span class="flow-item" data-name="西口駅前広場">西口駅前広場</span>
+            </div>
+            <div class="flow-arrow">↓</div>
+            <div class="flow-step">
+                <span class="flow-item" data-name="アリーナ予定地">④アリーナ予定地</span>
+            </div>
+        </div>
+        <script src="resources/qgis2web_expressions.js"></script>
+        <script src="./resources/functions.js"></script>
+        <script src="./resources/ol.js"></script>
+        <script src="resources/photon-geocoder-autocomplete.min.js"></script>
+        <script src="layers/polygon_GeoJSON_1.js"></script><script src="layers/line_GeoJSON_2.js"></script><script src="layers/point_GeoJSON_3.js"></script>
+        <script src="styles/polygon_GeoJSON_1_style.js"></script><script src="styles/line_GeoJSON_2_style.js"></script><script src="styles/point_GeoJSON_3_style.js"></script>
+        <script src="./layers/layers.js" type="text/javascript"></script> 
+        <script src="./resources/Autolinker.min.js"></script>
+        <script src="./resources/qgis2web.js"></script>
+        <script>
+        // Style for filtered-out ('off') features
+        const offStyle = new ol.style.Style({
+            fill: new ol.style.Fill({
+                color: 'rgba(128, 128, 128, 0.5)'
+            }),
+            stroke: new ol.style.Stroke({
+                color: 'rgba(128, 128, 128, 0.5)',
+                width: 1.748
+            }),
+            image: new ol.style.Circle({
+                radius: 4.0,
+                fill: new ol.style.Fill({
+                    color: 'rgba(128, 128, 128, 0.5)'
+                }),
+                stroke: new ol.style.Stroke({
+                    color: 'rgba(128, 128, 128, 0.5)',
+                    width: 0
+                })
+            })
+        });
+
+        // Style function for filtered-out labels
+        function offLabelStyle(feature, resolution) {
+            var labelText = "";
+            if (feature.get("名称") !== null) {
+                labelText = String(feature.get("名称"));
+            } else {
+                return null; // Don't show a label if there's no name
+            }
+
+            return new ol.style.Style({
+                text: createTextStyle(
+                    feature,
+                    resolution,
+                    labelText,
+                    "15.600000000000001px 'Open Sans', sans-serif", // Font from point_style
+                    '#808080', // Gray color for text
+                    'point', // placement
+                    'rgba(255, 255, 255, 0.5)', // buffer color with opacity
+                    3.0
+                )
+            });
+        };
+
+        // A simple combined style function for 'off' state
+        function getOffStyle(feature, resolution) {
+            var styles = [offStyle];
+            // Only apply label style to points
+            if (feature.getGeometry().getType().includes('Point')) {
+                var label = offLabelStyle(feature, resolution);
+                if (label) {
+                    styles.push(label);
+                }
+            }
+            return styles;
+        }
+
+        // --- Filter Implementation ---
+        
+        // Function to normalize full-width alphanumeric characters to half-width and lowercase
+        function normalizeText(text) {
+            if (!text) return '';
+            // Replace full-width alphanumeric characters with half-width
+            // and convert to lowercase for case-insensitive comparison.
+            return text.replace(/[Ａ-Ｚａ-ｚ０-９]/g, function(s) {
+                return String.fromCharCode(s.charCodeAt(0) - 0xFEE0);
+            }).toLowerCase();
+        }
+
+        // Wait for the map to be initialized
+        map.on('rendercomplete', function() {
+            // This is a one-time setup
+            if (window.filterSetupDone) {
+                return;
+            }
+            window.filterSetupDone = true;
+
+            const highlightPolygonStyle = new ol.style.Style({
+                fill: new ol.style.Fill({ color: 'rgba(255, 0, 0, 0.5)' }),
+                stroke: new ol.style.Stroke({ color: 'rgba(255, 0, 0, 0.8)', width: 3 })
+            });
+
+            const highlightLineStyle = new ol.style.Style({
+                stroke: new ol.style.Stroke({ color: 'rgba(255, 0, 0, 0.8)', width: 8 })
+            });
+
+            function createHighlightPointStyle(feature, resolution) {
+                return new ol.style.Style({
+                    text: createTextStyle(
+                        feature,
+                        resolution,
+                        String(feature.get("名称") || ''),
+                        "15.600000000000001px 'Open Sans', sans-serif",
+                        'rgba(255, 0, 0, 0.9)',
+                        'point',
+                        '#FFFFFF',
+                        3.0
+                    )
+                });
+            }
+
+            const highlightSource = new ol.source.Vector();
+            const highlightLayer = new ol.layer.Vector({
+                source: highlightSource,
+                style: function(feature, resolution) {
+                    const geomType = feature.getGeometry().getType();
+                    if (geomType.includes('Polygon')) {
+                        return highlightPolygonStyle;
+                    } else if (geomType.includes('Line')) {
+                        return highlightLineStyle;
+                    } else if (geomType.includes('Point')) {
+                        return createHighlightPointStyle(feature, resolution);
+                    }
+                },
+                zIndex: 999
+            });
+            map.addLayer(highlightLayer);
+
+            const buttons = [
+                { id: 'ehime-btn', text: '愛媛県' },
+                { id: 'matsuyama-btn', text: '松山市' },
+                { id: 'jr-btn', text: 'ＪＲ四国' },
+                { id: 'iyotetsu-btn', text: '伊予鉄道' },
+                { id: 'dev-step-btn', text: '整備ステップ' }
+            ];
+
+            const layers = [
+                { layer: lyr_polygon_GeoJSON_1, originalStyle: style_polygon_GeoJSON_1 },
+                { layer: lyr_line_GeoJSON_2, originalStyle: style_line_GeoJSON_2 },
+                { layer: lyr_point_GeoJSON_3, originalStyle: style_point_GeoJSON_3 }
+            ];
+
+            const allManagedCategories = buttons.map(b => normalizeText(b.text));
+
+            function isFeatureOff(feature) {
+                const onCategories = buttons
+                    .filter(b => !document.getElementById(b.id).classList.contains('off'))
+                    .map(b => normalizeText(b.text));
+                
+                const rolesStr = feature.get('役割分担');
+                const normalizedRolesStr = normalizeText(rolesStr);
+                
+                if (!normalizedRolesStr) return false;
+
+                const isManaged = allManagedCategories.some(cat => normalizedRolesStr.includes(cat));
+                if (!isManaged) return false;
+
+                const matchesOn = onCategories.some(cat => normalizedRolesStr.includes(cat));
+                return !matchesOn;
+            }
+
+            function updateFeatureListStyle() {
+                const polygonFeatures = lyr_polygon_GeoJSON_1.getSource().getFeatures();
+                const lineFeatures = lyr_line_GeoJSON_2.getSource().getFeatures();
+                const allFeatures = polygonFeatures.concat(lineFeatures);
+
+                allFeatures.forEach(feature => {
+                    const row = document.getElementById('list-item-' + feature.get('fid'));
+                    if (row) {
+                        if (isFeatureOff(feature)) {
+                            row.classList.add('list-item-off');
+                            Array.from(row.cells).forEach(cell => cell.style.color = '');
+                        } else {
+                            row.classList.remove('list-item-off');
+                            const color = feature.get('色');
+                            if (color) {
+                                Array.from(row.cells).forEach(cell => cell.style.color = color);
+                            }
+                        }
+                    }
+                });
+            }
+
+            let labelsVisible = true; // Define state for label visibility
+
+            function updateFilter() {
+                layers.forEach(l => {
+                    l.layer.setStyle(function(feature, resolution) {
+                        let style = isFeatureOff(feature) ?
+                            getOffStyle(feature, resolution) :
+                            l.originalStyle(feature, resolution);
+
+                        if (!labelsVisible) {
+                            // If layer is the point layer, hide it completely.
+                            if (l.layer === lyr_point_GeoJSON_3) {
+                                return null;
+                            }
+                            // For other layers, just hide the labels from the calculated style.
+                            if (style) {
+                                if (Array.isArray(style)) {
+                                    return style.map(s => {
+                                        if (s.getText()) {
+                                            const newS = s.clone();
+                                            newS.setText(null);
+                                            return newS;
+                                        }
+                                        return s;
+                                    }).filter(s => s);
+                                } else if (style.getText()) {
+                                    const newStyle = style.clone();
+                                    newStyle.setText(null);
+                                    return newStyle;
+                                }
+                            }
+                        }
+                        return style;
+                    });
+                });
+                updateFeatureListStyle();
+            }
+
+            function populateFeatureList() {
+                const tableBody = document.querySelector("#polygon-list-table tbody");
+                const polygonFeatures = lyr_polygon_GeoJSON_1.getSource().getFeatures();
+                const lineFeatures = lyr_line_GeoJSON_2.getSource().getFeatures();
+                const allFeatures = polygonFeatures.concat(lineFeatures);
+
+                allFeatures.forEach(feature => {
+                    const row = tableBody.insertRow();
+                    row.id = 'list-item-' + feature.get('fid');
+
+                    const cellName = row.insertCell();
+                    cellName.textContent = feature.get('名称') || '';
+                    cellName.style.cursor = 'pointer';
+                    cellName.addEventListener('click', function() {
+                        highlightSource.clear();
+                        highlightSource.addFeature(feature);
+                        setTimeout(function() {
+                            highlightSource.clear();
+                        }, 1000);
+                    });
+
+                    const cellRole = row.insertCell();
+                    const roles = feature.get('役割分担') || '';
+                    cellRole.innerHTML = roles.replace(/,/g, '<br>');
+                    
+                    const cellDate = row.insertCell();
+                    cellDate.textContent = feature.get('完成時期') || '';
+                });
+            }
+
+            // --- Flowchart Logic ---
+
+            const filterButtons = document.getElementById('filter-buttons');
+            const polygonListContainer = document.getElementById('polygon-list-container');
+            const flowchartOverlay = document.getElementById('flowchart-overlay');
+
+            // Function to show/hide the flowchart and other UI elements
+            function toggleFlowchartView(show) {
+                if (show) {
+                    filterButtons.style.display = 'none';
+                    polygonListContainer.style.display = 'none';
+                    flowchartOverlay.style.display = 'block';
+                } else {
+                    filterButtons.style.display = 'flex'; // The original display style
+                    polygonListContainer.style.display = 'block';
+                    flowchartOverlay.style.display = 'none';
+                }
+            }
+
+            // Function to find a feature by its '名称' property
+            function findFeatureByName(name) {
+                // Prioritize polygons
+                const polygonFeature = lyr_polygon_GeoJSON_1.getSource().getFeatures().find(f => f.get('名称') === name);
+                if (polygonFeature) return polygonFeature;
+
+                const lineFeature = lyr_line_GeoJSON_2.getSource().getFeatures().find(f => f.get('名称') === name);
+                if (lineFeature) return lineFeature;
+                
+                const pointFeature = lyr_point_GeoJSON_3.getSource().getFeatures().find(f => f.get('名称') === name);
+                if (pointFeature) return pointFeature;
+
+                return null;
+            }
+
+            // Define highlight styles
+            const highlightStylePolygon = new ol.style.Style({
+                fill: new ol.style.Fill({ color: 'rgba(255, 0, 0, 0.5)' }),
+                stroke: new ol.style.Stroke({ color: 'rgba(255, 0, 0, 0.8)', width: 3 })
+            });
+            const highlightStyleLine = new ol.style.Style({
+                stroke: new ol.style.Stroke({ color: 'rgba(255,0,0,0.8)', width: 8 })
+            });
+            const highlightStylePoint = new ol.style.Style({
+                 image: new ol.style.Circle({
+                    radius: 10,
+                    fill: new ol.style.Fill({ color: 'rgba(255, 0, 0, 0.5)' }),
+                    stroke: new ol.style.Stroke({ color: 'red', width: 2 })
+                })
+            });
+
+            // Function to highlight a feature for 1 second
+            function highlightFeature(featureName) {
+                const feature = findFeatureByName(featureName);
+                if (!feature) {
+                    console.warn(`Feature not found: ${featureName}`);
+                    return;
+                }
+
+                const geometryType = feature.getGeometry().getType();
+                let highlightStyle;
+                if (geometryType.includes('Polygon')) {
+                    highlightStyle = highlightStylePolygon;
+                } else if (geometryType.includes('Line')) {
+                    highlightStyle = highlightStyleLine;
+                } else { // Point
+                    highlightStyle = highlightStylePoint;
+                }
+
+                feature.setStyle(highlightStyle);
+                setTimeout(() => {
+                    feature.setStyle(null); // Revert to layer's style
+                }, 1000);
+            }
+            
+            // --- End Flowchart Logic ---
+
+
+            buttons.forEach(b => {
+                const buttonElement = document.getElementById(b.id);
+                // The '整備ステップ' button gets special handling
+                if (b.id === 'dev-step-btn') {
+                    buttonElement.addEventListener('click', function(e) {
+                        e.preventDefault(); // prevent any default behavior
+                        toggleFlowchartView(true);
+                    });
+                } else {
+                    // Original filter functionality for other buttons
+                    buttonElement.addEventListener('click', function() {
+                        this.classList.toggle('off');
+                        updateFilter();
+                    });
+                }
+            });
+
+            // Add listener for the close button
+            document.getElementById('close-flowchart-btn').addEventListener('click', () => {
+                toggleFlowchartView(false);
+            });
+
+            // Add listeners for the flowchart items
+            document.querySelectorAll('.flow-item').forEach(item => {
+                item.addEventListener('click', function() {
+                    const featureName = this.getAttribute('data-name');
+                    if (featureName) {
+                        highlightFeature(featureName);
+                    }
+                });
+            });
+            
+            // Add event listener for the label toggle checkbox
+            document.getElementById('label-toggle').addEventListener('change', function() {
+                labelsVisible = this.checked;
+                updateFilter(); // Re-apply styles
+            });
+
+            // Initial setup
+            populateFeatureList();
+            updateFilter();
+        });
+        </script>
+    </body>
+</html>

@@ -1,0 +1,162 @@
+/* === Custom Styles for JR Matsuyama Station Map === */
+
+/* --- General Layout & Buttons --- */
+#filter-buttons {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    background-color: rgba(255, 255, 255, 0.5);
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 10px;
+}
+
+.filter-button {
+    padding: 12px 15px;
+    margin-bottom: 5px;
+    background-color: #FFDDC1; /* Light Orange */
+    color: #444444;
+    border: 1px solid #ccc;
+    cursor: pointer;
+    border-radius: 4px;
+    font-size: 20pt;
+}
+
+#dev-step-btn {
+    background-color: #ADD8E6; /* Light Blue */
+}
+
+.filter-button.off {
+    background-color: #e0e0e0;
+    color: #999999;
+}
+
+/* --- Label Toggle Checkbox --- */
+#label-toggle-container {
+    margin-top: 10px;
+    background-color: #f8f8f8;
+    padding: 5px;
+    border-radius: 4px;
+    text-align: center;
+}
+
+#label-toggle {
+    transform: scale(1.5);
+    margin-right: 5px;
+    vertical-align: middle;
+}
+
+#label-toggle-label {
+    color: #444444;
+    font-size: 16pt;
+    vertical-align: middle;
+    cursor: pointer;
+}
+
+/* --- Polygon List Table --- */
+#polygon-list-container {
+    position: absolute;
+    bottom: 30px;
+    right: 10px;
+    z-index: 1000;
+    background-color: rgba(255, 255, 255, 0.85);
+    max-height: 40%;
+    overflow-y: auto;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+#polygon-list-table {
+    border-collapse: collapse;
+    font-size: 12pt;
+}
+
+#polygon-list-table th, #polygon-list-table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+
+#polygon-list-table td:nth-child(1) {
+    max-width: 20ch; /* 名称 */
+    overflow-wrap: break-word;
+}
+
+#polygon-list-table td:nth-child(2) {
+    max-width: 4ch; /* 役割分担 */
+    overflow-wrap: break-word;
+}
+
+#polygon-list-table td:nth-child(3) {
+    max-width: 17ch; /* 完成時期 */
+    overflow-wrap: break-word;
+}
+
+#polygon-list-table th {
+    background-color: #f2f2f2;
+    position: sticky;
+    top: 0;
+}
+
+.list-item-off td {
+    color: #999999;
+}
+
+
+/* --- Flowchart Overlay --- */
+#flowchart-overlay {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 1001;
+    background-color: rgba(255, 255, 255, 1.0); /* Opaque white */
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 15px;
+    padding-top: 40px;
+    text-align: center;
+}
+
+#close-flowchart-btn {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    cursor: pointer;
+    background-color: #f8f8f8;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 12pt;
+}
+
+#flowchart-overlay h3 {
+    font-size: 18pt;
+    margin-top: 0;
+    margin-bottom: 10px;
+}
+
+.flow-step {
+    border: 1px solid #999;
+    border-radius: 4px;
+    padding: 10px;
+    margin: 5px 0;
+    background-color: rgba(240, 240, 240, 0.8);
+}
+
+.flow-arrow {
+    font-size: 16pt;
+    font-weight: bold;
+}
+
+.flow-item {
+    cursor: pointer;
+    display: inline-block;
+    padding: 2px 5px;
+    font-size: 16pt;
+}
+
+.flow-item:hover {
+    text-decoration: underline;
+}

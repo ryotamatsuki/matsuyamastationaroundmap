@@ -1,0 +1,15 @@
+将来、新しいqgis2webの出力フォルダで私に同じ作業を依頼される際の、最も確実で理想的な手順は以下の通りです。
+
+
+   1. ファイルの準備: 新しくqgis2webで出力したフォルダに、現在のプロジェクトから以下の3つのファイルをコピーして格納します。
+       * requirements_JR_Matsuyama_Station.md （フォルダの最上位に）
+       * resources/custom_style.css （resourcesフォルダ内に）
+       * resources/custom_logic.js （resourcesフォルダ内に）
+
+
+   2. Geminiへの依頼:
+      その後、私に「`requirements_JR_Matsuyama_Station.md`の実装ガイドに従って、このプロジェクトを更新してください」のようにご依頼ください。
+
+
+  この手順を踏んでいただくことで、私がrequirements_JR_Matsuyama_Station.mdを読み解き、必要なすべてのファイルを変更・適用して、今回の状態を完
+  全に再現することが可能になります。
