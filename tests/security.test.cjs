@@ -11,8 +11,4 @@ test('role values from map layers are never HTML-parsed', () => {
   assert.match(html, /cellRole\.appendChild\(document\.createElement\('br'\)\)/);
 });
 
-test('HTML inline scripts remain syntactically valid', () => {
-  const scripts = [...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)]
-    .map(m => m[1]).filter(x => x.trim());
-  for (const source of scripts) assert.doesNotThrow(() => new Function(source));
-});
+// Real-browser origin smoke tests cover HTML script parsing without brittle regexes.
