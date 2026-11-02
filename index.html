@@ -458,7 +458,10 @@
 
                     const cellRole = row.insertCell();
                     const roles = feature.get('役割分担') || '';
-                    cellRole.innerHTML = roles.replace(/,/g, '<br>');
+                    String(roles).split(',').forEach((role, index) => {
+                        if (index) cellRole.appendChild(document.createElement('br'));
+                        cellRole.appendChild(document.createTextNode(role));
+                    });
                     
                     const cellDate = row.insertCell();
                     cellDate.textContent = feature.get('完成時期') || '';
